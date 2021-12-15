@@ -1,6 +1,6 @@
-VERSION=v2-3.5.5
+VERSION=v3-zk3.6.3
 PROJECT_ID=nirmata
-REGISTRY=docker.io
+REGISTRY=ghcr.io
 PROJECT=${REGISTRY}/${PROJECT_ID}
 
 all: build

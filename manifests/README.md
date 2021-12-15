@@ -248,7 +248,7 @@ with the Services defined above and the parameters passed to the start-zookeeper
 the requested number of replicas corresponds to the `--servers` parameter.
 
 ```yaml
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zk
@@ -350,7 +350,7 @@ ensure that we only allow one node to fail due to a planned disruption. This all
 concurrent unplanned disruption.
 
 ```yaml
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: zk-pdb

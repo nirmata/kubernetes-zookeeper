@@ -28,11 +28,14 @@ spec:
   selector:
     app: zk
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zk
 spec:
+  selector:
+    matchLabels:
+      app: zk
   serviceName: zk-hs
   replicas: 1
   podManagementPolicy: Parallel
@@ -55,8 +58,8 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
       - name: kubernetes-zookeeper
-        imagePullPolicy: Always
-        image: "gcr.io/google_containers/kubernetes-zookeeper:1.0-3.4.10"
+        imagePullPolicy: IfNotPresent
+        image: "ghcr.io/nirmata/kubernetes-zookeeper:v3-zk3.6.3"
         resources:
           requests:
             memory: "1Gi"

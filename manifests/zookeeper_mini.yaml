@@ -28,7 +28,7 @@ spec:
   selector:
     app: zk
 ---
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: zk-pdb
@@ -38,7 +38,7 @@ spec:
       app: zk
   maxUnavailable: 1
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zk
@@ -67,8 +67,8 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
       - name: kubernetes-zookeeper
-        imagePullPolicy: Always
-        image: "gcr.io/google_containers/kubernetes-zookeeper:1.0-3.4.10"
+        imagePullPolicy: IfNotPresent
+        image: "ghcr.io/nirmata/kubernetes-zookeeper:v3-zk3.6.3"
         resources:
           requests:
             memory: "1Gi"

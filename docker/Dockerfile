@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk12-openj9:x86_64-ubuntu-jre-12.0.2_10_openj9-0.15.1
+FROM azul/zulu-openjdk:17.0.1-17.30.15-jre
 
 ENV ZK_USER=zookeeper \
     ZK_HOME=/opt/zookeeper \
@@ -22,46 +22,50 @@ RUN set -eux; \
 # Verify that gosu binary works
     gosu nobody true
 
-ARG GPG_KEY=3F7A1D16FA4217B1DC75E1C9FFE35B7F15DFA1BA
-ARG SHORT_DISTRO_NAME=zookeeper-3.5.5
-ARG DISTRO_NAME=apache-zookeeper-3.5.5-bin
+ARG GPG_KEY=DFF24FB8323ADAC90E3CF36F729E61230EA917E9
+ARG SHORT_DISTRO_NAME=zookeeper-3.6.3
+ARG DISTRO_NAME=apache-zookeeper-3.6.3-bin
 
 # Download Apache Zookeeper, verify its PGP signature, untar and clean up
 RUN set -eux; \
-    wget -q "https://www.apache.org/dist/zookeeper/$SHORT_DISTRO_NAME/$DISTRO_NAME.tar.gz"; \
-    wget -q "https://www.apache.org/dist/zookeeper/$SHORT_DISTRO_NAME/$DISTRO_NAME.tar.gz.asc"; \
+    ddist() { \
+        local f="$1"; shift; \
+        local distFile="$1"; shift; \
+        local success=; \
+        local distUrl=; \
+        for distUrl in \
+            'https://www.apache.org/dyn/closer.cgi?action=download&filename=' \
+            https://www-us.apache.org/dist/ \
+            https://www.apache.org/dist/ \
+            https://archive.apache.org/dist/ \
+        ; do \
+            if wget -q -O "$f" "$distUrl$distFile" && [ -s "$f" ]; then \
+                success=1; \
+                break; \
+            fi; \
+        done; \
+        [ -n "$success" ]; \
+    }; \
+    ddist "$DISTRO_NAME.tar.gz" "zookeeper/$SHORT_DISTRO_NAME/$DISTRO_NAME.tar.gz"; \
+    ddist "$DISTRO_NAME.tar.gz.asc" "zookeeper/$SHORT_DISTRO_NAME/$DISTRO_NAME.tar.gz.asc"; \
     export GNUPGHOME="$(mktemp -d)"; \
     gpg --keyserver ha.pool.sks-keyservers.net --recv-key "$GPG_KEY" || \
-    gpg --keyserver pgp.mit.edu --recv-keys "$GPG_KEY" || \
-    gpg --keyserver keyserver.pgp.com --recv-keys "$GPG_KEY"; \
+    gpg --keyserver keys.openpgp.org --recv-keys "$GPG_KEY" || \
+    gpg --keyserver keyserver.ubuntu.com --recv-keys "$GPG_KEY"; \
     gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz"; \
-    tar -xvzf "$DISTRO_NAME.tar.gz" -C /opt; \
+    tar -xvzf "$DISTRO_NAME.tar.gz" -C /opt;  \
     rm -rf "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc"; \
-    ln -s /opt/$DISTRO_NAME /opt/zookeeper; \
-    rm -rf /opt/zookeeper/CHANGES.txt \
-      /opt/zookeeper/README.txt \
-      /opt/zookeeper/NOTICE.txt \
-      /opt/zookeeper/CHANGES.txt \
-      /opt/zookeeper/README_packaging.txt \
-      /opt/zookeeper/build.xml \
-      /opt/zookeeper/config \
-      /opt/zookeeper/contrib \
-      /opt/zookeeper/dist-maven \
-      /opt/zookeeper/docs \
-      /opt/zookeeper/ivy.xml \
-      /opt/zookeeper/ivysettings.xml \
-      /opt/zookeeper/recipes \
-      /opt/zookeeper/src \
-      /opt/zookeeper/$SHORT_DISTRO_NAME.jar.asc \
-      /opt/zookeeper/$SHORT_DISTRO_NAME.jar.md5 \
-      /opt/zookeeper/$SHORT_DISTRO_NAME.jar.sha1; \
 	apt-get autoremove -y wget; \
-	rm -rf /var/lib/apt/lists/*; \
-	useradd $ZK_USER; \
-    [ `id -g $ZK_USER` -eq 1000 ]; \
-    mkdir -p $ZK_DATA_DIR $ZK_DATA_LOG_DIR $ZK_LOG_DIR /usr/share/zookeeper /tmp/zookeeper /usr/etc/; \
-	chown -R "$ZK_USER:$ZK_USER" /opt/$DISTRO_NAME $ZK_DATA_DIR $ZK_LOG_DIR $ZK_DATA_LOG_DIR /tmp/zookeeper; \
-	ln -s /opt/zookeeper/conf/ /usr/etc/zookeeper; \
+	rm -rf /var/lib/apt/lists/*;
+
+# Add a user with an explicit UID/GID and create necessary directories
+RUN set -eux; \
+    groupadd -r $ZK_USER --gid=1000; \
+    useradd -r -g $ZK_USER --uid=1000 $ZK_USER; \
+    mkdir -p "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /usr/share/zookeeper /tmp/zookeeper /usr/etc/; \
+    chown -R "$ZK_USER:$ZK_USER" /opt/$DISTRO_NAME "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /tmp/zookeeper; \
+    ln -s /opt/$DISTRO_NAME /opt/zookeeper; \
+    ln -s /opt/zookeeper/conf/ /usr/etc/zookeeper; \
 	ln -s /opt/zookeeper/bin/* /usr/bin; \
 	ln -s /opt/zookeeper/lib/* /usr/share/zookeeper;
 

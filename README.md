@@ -5,10 +5,12 @@
 > https://github.com/kubernetes/contrib/tree/master/statefulsets/zookeeper
 > 
 > The following modifications have been applied:
-> 1. Update to Zookeeper version 3.5.5
-> 2. Use [OpenJDK 12](https://hub.docker.com/r/adoptopenjdk/openjdk12) [OpenJ9 JRE](https://www.eclipse.org/openj9/)
-> 3. Patch for out of disk condition (https://issues.apache.org/jira/browse/ZOOKEEPER-1621).
+> 1. Uses Zookeeper version 3.6.3
+> 2. Uses [JRE OpenJDK 17](https://hub.docker.com/r/azul/zulu-openjdk)
 > 
+> The image can be built in the /docker directory using `make`.
+>
+> A pre-built image is available at: `ghcr.io/nirmata/kubernetes-zookeeper:v3-zk3.6.3`
 
 ***
 
@@ -21,8 +23,7 @@ This project contains tools to facilitate the deployment of
 It requires Kubernetes 1.7 or greater.
 
 ## Limitations
-1. Scaling is not currently supported. An ensemble's membership can not be updated in a safe way in 
-ZooKeeper 3.4.10 (The current stable release).
+1. Scaling is not currently supported. An ensemble's membership can not be updated in a safe way.
 1. Observers are currently not supported. Contributions are welcome.
 1. Persistent Volumes must be used. emptyDirs will likely result in a loss of data.
 
