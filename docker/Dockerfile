@@ -18,6 +18,7 @@ RUN set -eux; \
         gnupg \
         netcat \
         wget; \
+    apt-get -y dist-upgrade; \
     rm -rf /var/lib/apt/lists/*; \
 # Verify that gosu binary works
     gosu nobody true
