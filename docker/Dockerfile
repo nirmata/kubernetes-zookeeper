@@ -75,3 +75,6 @@ WORKDIR /opt/zookeeper
 
 #Copy configuration generator script to bin
 COPY scripts $ZK_HOME/bin/
+
+USER 1000
+
