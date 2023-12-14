@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:17.0.1-17.30.15-jre
+FROM azul/zulu-openjdk:17.0.8.1-17.44.53-jre
 
 ENV ZK_USER=zookeeper \
     ZK_HOME=/opt/zookeeper \
@@ -7,7 +7,7 @@ ENV ZK_USER=zookeeper \
     ZK_LOG_DIR=/var/log/zookeeper \
     PATH=$PATH:/opt/zookeeper/bin
 
-# Install required packges
+# Install required packages
 RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive \
