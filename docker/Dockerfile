@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:17.0.8.1-17.44.53-jre
+FROM azul/zulu-openjdk:17.0.8.1-17.44.53-jre as zk-builder
 
 ENV ZK_USER=zookeeper \
     ZK_HOME=/opt/zookeeper \
@@ -66,6 +66,26 @@ RUN set -eux; \
     mkdir -p "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /usr/share/zookeeper /tmp/zookeeper /usr/etc/; \
     chown -R "$ZK_USER:$ZK_USER" /opt/$DISTRO_NAME "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /tmp/zookeeper; \
     ln -s /opt/$DISTRO_NAME /opt/zookeeper; \
+    ln -s /opt/zookeeper/conf/ /usr/etc/zookeeper; \
+	ln -s /opt/zookeeper/bin/* /usr/bin; \
+	ln -s /opt/zookeeper/lib/* /usr/share/zookeeper;
+
+# layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
+FROM ghcr.io/nirmata/alpine-openjdk17-jre-headless:0.5
+COPY --from=zk-builder /opt/zookeeper /opt/zookeeper
+
+ENV ZK_USER=zookeeper \
+    ZK_HOME=/opt/zookeeper \
+    ZK_DATA_DIR=/var/lib/zookeeper/data \
+    ZK_DATA_LOG_DIR=/var/lib/zookeeper/log \
+    ZK_LOG_DIR=/var/log/zookeeper \
+    PATH=$PATH:/opt/zookeeper/bin
+
+RUN set -eux; \
+    groupadd -r $ZK_USER --gid=1000; \
+    useradd -r -g $ZK_USER --uid=1000 $ZK_USER; \
+    mkdir -p "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /usr/share/zookeeper /tmp/zookeeper /usr/etc/; \
+    chown -R "$ZK_USER:$ZK_USER" /opt/zookeeper "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /tmp/zookeeper; \
     ln -s /opt/zookeeper/conf/ /usr/etc/zookeeper; \
 	ln -s /opt/zookeeper/bin/* /usr/bin; \
 	ln -s /opt/zookeeper/lib/* /usr/share/zookeeper;
