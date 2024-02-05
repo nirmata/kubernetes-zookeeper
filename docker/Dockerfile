@@ -1,11 +1,25 @@
-FROM azul/zulu-openjdk:17.0.8.1-17.44.53-jre as zk-builder
+FROM eclipse-temurin:11-jre as zk-builder
 
-ENV ZK_USER=zookeeper \
-    ZK_HOME=/opt/zookeeper \
-    ZK_DATA_DIR=/var/lib/zookeeper/data \
-    ZK_DATA_LOG_DIR=/var/lib/zookeeper/log \
-    ZK_LOG_DIR=/var/log/zookeeper \
-    PATH=$PATH:/opt/zookeeper/bin
+ENV ZOO_USER=zookeeper \
+    ZOO_CONF_DIR=/conf \
+    ZOO_DATA_DIR=/data \
+    ZOO_DATA_LOG_DIR=/datalog \
+    ZOO_LOG_DIR=/logs \
+    ZOO_TICK_TIME=2000 \
+    ZOO_INIT_LIMIT=5 \
+    ZOO_SYNC_LIMIT=2 \
+    ZOO_AUTOPURGE_PURGEINTERVAL=0 \
+    ZOO_AUTOPURGE_SNAPRETAINCOUNT=3 \
+    ZOO_MAX_CLIENT_CNXNS=60 \
+    ZOO_STANDALONE_ENABLED=true \
+    ZOO_ADMINSERVER_ENABLED=true
+
+# Add a user with an explicit UID/GID and create necessary directories
+RUN set -eux; \
+    groupadd -r "$ZOO_USER" --gid=1000; \
+    useradd -r -g "$ZOO_USER" --uid=1000 "$ZOO_USER"; \
+    mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"; \
+    chown "$ZOO_USER:$ZOO_USER" "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"
 
 # Install required packages
 RUN set -eux; \
@@ -18,14 +32,13 @@ RUN set -eux; \
         gnupg \
         netcat \
         wget; \
-    apt-get -y dist-upgrade; \
     rm -rf /var/lib/apt/lists/*; \
 # Verify that gosu binary works
     gosu nobody true
 
-ARG GPG_KEY=DFF24FB8323ADAC90E3CF36F729E61230EA917E9
-ARG SHORT_DISTRO_NAME=zookeeper-3.6.3
-ARG DISTRO_NAME=apache-zookeeper-3.6.3-bin
+ARG GPG_KEY=3F7A1D16FA4217B1DC75E1C9FFE35B7F15DFA1BA
+ARG SHORT_DISTRO_NAME=zookeeper-3.9.1
+ARG DISTRO_NAME=apache-zookeeper-3.9.1-bin
 
 # Download Apache Zookeeper, verify its PGP signature, untar and clean up
 RUN set -eux; \
@@ -50,49 +63,47 @@ RUN set -eux; \
     ddist "$DISTRO_NAME.tar.gz" "zookeeper/$SHORT_DISTRO_NAME/$DISTRO_NAME.tar.gz"; \
     ddist "$DISTRO_NAME.tar.gz.asc" "zookeeper/$SHORT_DISTRO_NAME/$DISTRO_NAME.tar.gz.asc"; \
     export GNUPGHOME="$(mktemp -d)"; \
-    gpg --keyserver ha.pool.sks-keyservers.net --recv-key "$GPG_KEY" || \
-    gpg --keyserver keys.openpgp.org --recv-keys "$GPG_KEY" || \
-    gpg --keyserver keyserver.ubuntu.com --recv-keys "$GPG_KEY"; \
+    gpg --keyserver hkps://keyserver.pgp.com --recv-key "$GPG_KEY" || \
+    gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys "$GPG_KEY" || \
+    gpg --keyserver hkps://pgp.mit.edu --recv-keys "$GPG_KEY"; \
     gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz"; \
-    tar -xvzf "$DISTRO_NAME.tar.gz" -C /opt;  \
+    tar -zxf "$DISTRO_NAME.tar.gz"; \
+    mv "$DISTRO_NAME/conf/"* "$ZOO_CONF_DIR"; \
     rm -rf "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc"; \
-	apt-get autoremove -y wget; \
-	rm -rf /var/lib/apt/lists/*;
-
-# Add a user with an explicit UID/GID and create necessary directories
-RUN set -eux; \
-    groupadd -r $ZK_USER --gid=1000; \
-    useradd -r -g $ZK_USER --uid=1000 $ZK_USER; \
-    mkdir -p "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /usr/share/zookeeper /tmp/zookeeper /usr/etc/; \
-    chown -R "$ZK_USER:$ZK_USER" /opt/$DISTRO_NAME "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /tmp/zookeeper; \
-    ln -s /opt/$DISTRO_NAME /opt/zookeeper; \
-    ln -s /opt/zookeeper/conf/ /usr/etc/zookeeper; \
-	ln -s /opt/zookeeper/bin/* /usr/bin; \
-	ln -s /opt/zookeeper/lib/* /usr/share/zookeeper;
+    chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
 # layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
-FROM ghcr.io/nirmata/alpine-openjdk17-jre-headless:0.5
-COPY --from=zk-builder /opt/zookeeper /opt/zookeeper
+FROM ghcr.io/nirmata/alpine-openjdk17-jre-headless:0.6
+ARG SHORT_DISTRO_NAME=zookeeper-3.9.1
+ARG DISTRO_NAME=apache-zookeeper-3.9.1-bin
+
+ENV ZOO_USER=nonroot \
+    ZOO_CONF_DIR=/conf \
+    ZOO_DATA_DIR=/data \
+    ZOO_DATA_LOG_DIR=/datalog \
+    ZOO_LOG_DIR=/logs \
+    ZOO_TICK_TIME=2000 \
+    ZOO_INIT_LIMIT=5 \
+    ZOO_SYNC_LIMIT=2 \
+    ZOO_AUTOPURGE_PURGEINTERVAL=0 \
+    ZOO_AUTOPURGE_SNAPRETAINCOUNT=3 \
+    ZOO_MAX_CLIENT_CNXNS=60 \
+    ZOO_STANDALONE_ENABLED=true \
+    ZOO_ADMINSERVER_ENABLED=true
+
+COPY --from=zk-builder --chown="$ZOO_USER:$ZOO_USER" /$DISTRO_NAME /$DISTRO_NAME
+COPY --from=zk-builder --chown="$ZOO_USER:$ZOO_USER" $ZOO_CONF_DIR $ZOO_CONF_DIR
 
 # generate java cacerts file /etc/ssl/certs/java/cacerts
 RUN /etc/ca-certificates/update.d/java-cacerts
 
-ENV ZK_USER=nonroot \
-    ZK_HOME=/opt/zookeeper \
-    ZK_DATA_DIR=/var/lib/zookeeper/data \
-    ZK_DATA_LOG_DIR=/var/lib/zookeeper/log \
-    ZK_LOG_DIR=/var/log/zookeeper \
-    PATH=$PATH:/opt/zookeeper/bin
+WORKDIR $DISTRO_NAME
+VOLUME ["$ZOO_DATA_DIR", "$ZOO_DATA_LOG_DIR", "$ZOO_LOG_DIR"]
 
-RUN set -eux; \
-    mkdir -p "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /usr/share/zookeeper /tmp/zookeeper /usr/etc/; \
-    chown -R "$ZK_USER:$ZK_USER" /opt/zookeeper "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /tmp/zookeeper; \
-    ln -s /opt/zookeeper/conf/ /usr/etc/zookeeper; \
-	ln -s /opt/zookeeper/bin/* /usr/bin; \
-	ln -s /opt/zookeeper/lib/* /usr/share/zookeeper;
+EXPOSE 2181 2888 3888 8080
 
-EXPOSE 2181 2888 3888
-WORKDIR /opt/zookeeper
+ENV PATH=$ZOO_HOME/bin/:/$DISTRO_NAME/bin:$PATH \
+    ZOOCFGDIR=$ZOO_CONF_DIR
 
-#Copy configuration generator script to bin
-COPY scripts $ZK_HOME/bin/
+COPY docker-entrypoint.sh /
+COPY scripts $ZOO_HOME/bin/
