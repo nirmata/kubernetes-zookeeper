@@ -74,7 +74,10 @@ RUN set -eux; \
 FROM ghcr.io/nirmata/alpine-openjdk17-jre-headless:0.5
 COPY --from=zk-builder /opt/zookeeper /opt/zookeeper
 
-ENV ZK_USER=zookeeper \
+# generate java cacerts file /etc/ssl/certs/java/cacerts
+RUN /etc/ca-certificates/update.d/java-cacerts
+
+ENV ZK_USER=nonroot \
     ZK_HOME=/opt/zookeeper \
     ZK_DATA_DIR=/var/lib/zookeeper/data \
     ZK_DATA_LOG_DIR=/var/lib/zookeeper/log \
@@ -82,8 +85,6 @@ ENV ZK_USER=zookeeper \
     PATH=$PATH:/opt/zookeeper/bin
 
 RUN set -eux; \
-    groupadd -r $ZK_USER --gid=1000; \
-    useradd -r -g $ZK_USER --uid=1000 $ZK_USER; \
     mkdir -p "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /usr/share/zookeeper /tmp/zookeeper /usr/etc/; \
     chown -R "$ZK_USER:$ZK_USER" /opt/zookeeper "$ZK_DATA_LOG_DIR" "$ZK_DATA_DIR" "$ZK_LOG_DIR" /tmp/zookeeper; \
     ln -s /opt/zookeeper/conf/ /usr/etc/zookeeper; \
