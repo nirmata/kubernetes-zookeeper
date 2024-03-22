@@ -73,7 +73,8 @@ RUN set -eux; \
     chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
 # layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
-FROM ghcr.io/nirmata/alpine-openjdk17-jre-headless:0.6
+FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.1
+
 ARG SHORT_DISTRO_NAME=zookeeper-3.9.1
 ARG DISTRO_NAME=apache-zookeeper-3.9.1-bin
 
@@ -94,9 +95,6 @@ ENV ZOO_USER=nonroot \
 COPY --from=zk-builder --chown="$ZOO_USER:$ZOO_USER" /$DISTRO_NAME /$DISTRO_NAME
 COPY --from=zk-builder --chown="$ZOO_USER:$ZOO_USER" $ZOO_CONF_DIR $ZOO_CONF_DIR
 
-# generate java cacerts file /etc/ssl/certs/java/cacerts
-RUN /etc/ca-certificates/update.d/java-cacerts
-
 WORKDIR $DISTRO_NAME
 VOLUME ["$ZOO_DATA_DIR", "$ZOO_DATA_LOG_DIR", "$ZOO_LOG_DIR"]
 
@@ -105,5 +103,5 @@ EXPOSE 2181 2888 3888 8080
 ENV PATH=$ZOO_HOME/bin/:/$DISTRO_NAME/bin:$PATH \
     ZOOCFGDIR=$ZOO_CONF_DIR
 
-COPY docker-entrypoint.sh /
+COPY scripts/docker-entrypoint.sh /
 COPY scripts $ZOO_HOME/bin/
