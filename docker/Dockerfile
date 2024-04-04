@@ -105,3 +105,15 @@ ENV PATH=$ZOO_HOME/bin/:/$DISTRO_NAME/bin:$PATH \
 
 COPY scripts/docker-entrypoint.sh /
 COPY scripts $ZOO_HOME/bin/
+
+RUN mkdir -p $ZOO_CONF_DIR
+RUN mkdir -p $ZOO_DATA_DIR
+RUN mkdir -p $ZOO_DATA_LOG_DIR
+RUN mkdir -p $ZOO_LOG_DIR
+
+RUN chown -R $ZOO_USER:$ZOO_USER $ZOO_CONF_DIR
+RUN chown -R $ZOO_USER:$ZOO_USER $ZOO_DATA_DIR
+RUN chown -R $ZOO_USER:$ZOO_USER $ZOO_DATA_LOG_DIR
+RUN chown -R $ZOO_USER:$ZOO_USER $ZOO_LOG_DIR
+
+USER 10000
