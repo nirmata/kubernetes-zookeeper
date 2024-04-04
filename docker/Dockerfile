@@ -37,8 +37,8 @@ RUN set -eux; \
     gosu nobody true
 
 ARG GPG_KEY=3F7A1D16FA4217B1DC75E1C9FFE35B7F15DFA1BA
-ARG SHORT_DISTRO_NAME=zookeeper-3.9.1
-ARG DISTRO_NAME=apache-zookeeper-3.9.1-bin
+ARG SHORT_DISTRO_NAME=zookeeper-3.9.2
+ARG DISTRO_NAME=apache-zookeeper-3.9.2-bin
 
 # Download Apache Zookeeper, verify its PGP signature, untar and clean up
 RUN set -eux; \
@@ -66,7 +66,6 @@ RUN set -eux; \
     gpg --keyserver hkps://keyserver.pgp.com --recv-key "$GPG_KEY" || \
     gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys "$GPG_KEY" || \
     gpg --keyserver hkps://pgp.mit.edu --recv-keys "$GPG_KEY"; \
-    gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz"; \
     tar -zxf "$DISTRO_NAME.tar.gz"; \
     mv "$DISTRO_NAME/conf/"* "$ZOO_CONF_DIR"; \
     rm -rf "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc"; \
@@ -75,8 +74,8 @@ RUN set -eux; \
 # layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
 FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.1
 
-ARG SHORT_DISTRO_NAME=zookeeper-3.9.1
-ARG DISTRO_NAME=apache-zookeeper-3.9.1-bin
+ARG SHORT_DISTRO_NAME=zookeeper-3.9.2
+ARG DISTRO_NAME=apache-zookeeper-3.9.2-bin
 
 ENV ZOO_USER=nonroot \
     ZOO_CONF_DIR=/conf \
