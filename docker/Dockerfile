@@ -4,7 +4,7 @@ ENV ZOO_USER=zookeeper \
     ZOO_CONF_DIR=/conf \
     ZOO_DATA_DIR=/data \
     ZOO_DATA_LOG_DIR=/datalog \
-    ZOO_LOG_DIR=/logs \
+    ZOO_LOG_DIR=/var/log/zookeeper \
     ZOO_TICK_TIME=2000 \
     ZOO_INIT_LIMIT=5 \
     ZOO_SYNC_LIMIT=2 \
@@ -72,7 +72,7 @@ RUN set -eux; \
     chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
 # layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
-FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.1
+FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.2
 
 ARG SHORT_DISTRO_NAME=zookeeper-3.9.2
 ARG DISTRO_NAME=apache-zookeeper-3.9.2-bin
@@ -81,7 +81,7 @@ ENV ZOO_USER=nonroot \
     ZOO_CONF_DIR=/conf \
     ZOO_DATA_DIR=/data \
     ZOO_DATA_LOG_DIR=/datalog \
-    ZOO_LOG_DIR=/logs \
+    ZOO_LOG_DIR=/var/log/zookeeper \
     ZOO_TICK_TIME=2000 \
     ZOO_INIT_LIMIT=5 \
     ZOO_SYNC_LIMIT=2 \
