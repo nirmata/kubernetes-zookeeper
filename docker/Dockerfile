@@ -72,7 +72,7 @@ RUN set -eux; \
     chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
 # layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
-FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.2
+FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.3
 
 ARG SHORT_DISTRO_NAME=zookeeper-3.9.2
 ARG DISTRO_NAME=apache-zookeeper-3.9.2-bin
