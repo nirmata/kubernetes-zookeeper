@@ -36,7 +36,7 @@ RUN set -eux; \
 # Copy required binaries from package-installer stage
 COPY --from=package-installer /usr/bin/gosu /usr/bin/gosu
 COPY --from=package-installer /usr/bin/wget /usr/bin/wget
-COPY --from=package-installer /usr/bin/netcat /usr/bin/netcat
+COPY --from=package-installer /bin/nc /usr/bin/nc
 COPY --from=package-installer /usr/bin/gpg /usr/bin/gpg
 COPY --from=package-installer /usr/bin/dirmngr /usr/bin/dirmngr
 COPY --from=package-installer /etc/ssl/certs /etc/ssl/certs
