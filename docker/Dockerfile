@@ -34,7 +34,7 @@ RUN set -eux; \
     chown -R 1000:1000 "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"
 
 # Copy required binaries from package-installer stage
-COPY --from=package-installer /usr/local/bin/gosu /usr/bin/gosu
+COPY --from=package-installer /usr/bin/gosu /usr/bin/gosu
 COPY --from=package-installer /usr/bin/wget /usr/bin/wget
 COPY --from=package-installer /bin/nc /usr/bin/nc
 COPY --from=package-installer /usr/bin/gpg /usr/bin/gpg
