@@ -1,18 +1,4 @@
-FROM debian:bullseye-slim AS package-installer
-
-RUN set -eux; \
-    apt-get update; \
-    DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --no-install-recommends \
-        ca-certificates \
-        dirmngr \
-        gosu \
-        gnupg \
-        netcat \
-        wget; \
-    rm -rf /var/lib/apt/lists/*
-
-FROM eclipse-temurin:11-jre AS zk-builder
+FROM eclipse-temurin:11-jre as zk-builder
 
 ENV ZOO_USER=zookeeper \
     ZOO_CONF_DIR=/conf \
@@ -28,21 +14,27 @@ ENV ZOO_USER=zookeeper \
     ZOO_STANDALONE_ENABLED=true \
     ZOO_ADMINSERVER_ENABLED=true
 
-# Create necessary directories
+# Add a user with an explicit UID/GID and create necessary directories
 RUN set -eux; \
+    groupadd -r "$ZOO_USER" --gid=1000; \
+    useradd -r -g "$ZOO_USER" --uid=1000 "$ZOO_USER"; \
     mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"; \
-    chown -R 1000:1000 "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"
+    chown "$ZOO_USER:$ZOO_USER" "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"
 
-# Copy required binaries from package-installer stage
-COPY --from=package-installer /usr/local/bin/gosu /usr/bin/gosu
-COPY --from=package-installer /usr/bin/wget /usr/bin/wget
-COPY --from=package-installer /bin/nc /usr/bin/nc
-COPY --from=package-installer /usr/bin/gpg /usr/bin/gpg
-COPY --from=package-installer /usr/bin/dirmngr /usr/bin/dirmngr
-COPY --from=package-installer /etc/ssl/certs /etc/ssl/certs
-
-# Verify that gosu binary works
-RUN gosu nobody true
+# Install required packages
+RUN set -eux; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        dirmngr \
+        gosu \
+        gnupg \
+        netcat \
+        wget; \
+    rm -rf /var/lib/apt/lists/*; \
+    # Verify that gosu binary works
+    gosu nobody true
 
 ARG GPG_KEY=3F7A1D16FA4217B1DC75E1C9FFE35B7F15DFA1BA
 ARG SHORT_DISTRO_NAME=zookeeper-3.9.2
