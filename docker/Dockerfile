@@ -1,4 +1,4 @@
-FROM eclipse-temurin:11-jre as zk-builder
+FROM eclipse-temurin:11-jre-debian as zk-builder
 
 ENV ZOO_USER=zookeeper \
     ZOO_CONF_DIR=/conf \
@@ -31,7 +31,7 @@ RUN set -eux; \
         netcat \
         wget; \
     rm -rf /var/lib/apt/lists/*; \
-# Verify that gosu binary works
+    # Verify that gosu binary works
     gosu nobody true
 
 ARG GPG_KEY=3F7A1D16FA4217B1DC75E1C9FFE35B7F15DFA1BA
