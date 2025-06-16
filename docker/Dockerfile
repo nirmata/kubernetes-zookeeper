@@ -16,8 +16,12 @@ ENV ZOO_USER=zookeeper \
 
 # Add a user with an explicit UID/GID and create necessary directories
 RUN set -eux; \
-    groupadd -r "$ZOO_USER" --gid=1000; \
-    useradd -r -g "$ZOO_USER" --uid=1000 "$ZOO_USER"; \
+    if ! getent group "$ZOO_USER" > /dev/null; then \
+        groupadd -r "$ZOO_USER" --gid=1000; \
+    fi; \
+    if ! getent passwd "$ZOO_USER" > /dev/null; then \
+        useradd -r -g "$ZOO_USER" --uid=1000 "$ZOO_USER"; \
+    fi; \
     mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"; \
     chown "$ZOO_USER:$ZOO_USER" "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"
 
