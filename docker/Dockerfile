@@ -1,4 +1,4 @@
-FROM eclipse-temurin:11-jre-debian as zk-builder
+FROM eclipse-temurin:11-jre AS zk-builder
 
 ENV ZOO_USER=zookeeper \
     ZOO_CONF_DIR=/conf \
