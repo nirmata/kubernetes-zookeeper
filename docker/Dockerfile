@@ -37,7 +37,7 @@ RUN set -eux; \
 COPY --from=package-installer /usr/bin/gosu /usr/bin/gosu
 COPY --from=package-installer /usr/bin/wget /usr/bin/wget
 COPY --from=package-installer /usr/bin/netcat /usr/bin/netcat
-COPY --from=package-installer /usr/bin/gnupg /usr/bin/gnupg
+COPY --from=package-installer /usr/bin/gpg /usr/bin/gpg
 COPY --from=package-installer /usr/bin/dirmngr /usr/bin/dirmngr
 COPY --from=package-installer /etc/ssl/certs /etc/ssl/certs
 
