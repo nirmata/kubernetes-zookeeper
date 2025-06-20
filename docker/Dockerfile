@@ -1,4 +1,4 @@
-FROM eclipse-temurin:11-jre as zk-builder
+FROM openjdk:11-jre-slim AS zk-builder
 
 ENV ZOO_USER=zookeeper \
     ZOO_CONF_DIR=/conf \
@@ -16,8 +16,15 @@ ENV ZOO_USER=zookeeper \
 
 # Add a user with an explicit UID/GID and create necessary directories
 RUN set -eux; \
-    groupadd -r "$ZOO_USER" --gid=1000; \
-    useradd -r -g "$ZOO_USER" --uid=1000 "$ZOO_USER"; \
+    if ! getent group "$ZOO_USER" > /dev/null 2>&1; then \
+        if getent group 1000 > /dev/null 2>&1; then \
+            groupadd -r "$ZOO_USER" --gid=1001; \
+            useradd -r -g "$ZOO_USER" --uid=1001 "$ZOO_USER"; \
+        else \
+            groupadd -r "$ZOO_USER" --gid=1000; \
+            useradd -r -g "$ZOO_USER" --uid=1000 "$ZOO_USER"; \
+        fi; \
+    fi; \
     mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"; \
     chown "$ZOO_USER:$ZOO_USER" "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR" "$ZOO_LOG_DIR"
 
@@ -37,8 +44,8 @@ RUN set -eux; \
     gosu nobody true
 
 ARG GPG_KEY=3F7A1D16FA4217B1DC75E1C9FFE35B7F15DFA1BA
-ARG SHORT_DISTRO_NAME=zookeeper-3.9.2
-ARG DISTRO_NAME=apache-zookeeper-3.9.2-bin
+ARG SHORT_DISTRO_NAME=zookeeper-3.9.3
+ARG DISTRO_NAME=apache-zookeeper-3.9.3-bin
 
 # Download Apache Zookeeper, verify its PGP signature, untar and clean up
 RUN set -eux; \
@@ -71,11 +78,25 @@ RUN set -eux; \
     rm -rf "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc"; \
     chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
-# layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
-FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.3
+# Update vulnerable dependencies with newer versions
+RUN set -eux; \
+    cd "/$DISTRO_NAME/lib"; \
+    # Download newer versions of vulnerable dependencies \
+    wget -O netty-handler-4.1.118.Final.jar https://repo1.maven.org/maven2/io/netty/netty-handler/4.1.118.Final/netty-handler-4.1.118.Final.jar; \
+    wget -O netty-common-4.1.118.Final.jar https://repo1.maven.org/maven2/io/netty/netty-common/4.1.118.Final/netty-common-4.1.118.Final.jar; \
+    wget -O logback-core-1.3.15.jar https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.3.15/logback-core-1.3.15.jar; \
+    wget -O jetty-server-9.4.57.v20241219.jar https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-server/9.4.57.v20241219/jetty-server-9.4.57.v20241219.jar; \
+    wget -O jetty-http-12.0.12.jar https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-http/12.0.12/jetty-http-12.0.12.jar; \
+    wget -O commons-io-2.14.0.jar https://repo1.maven.org/maven2/commons-io/commons-io/2.14.0/commons-io-2.14.0.jar; \
+    # Remove old vulnerable versions \
+    rm -f netty-handler-4.1.105.Final.jar netty-common-4.1.105.Final.jar logback-core-1.2.13.jar jetty-server-9.4.53.v20231009.jar jetty-http-9.4.53.v20231009.jar commons-io-2.11.0.jar; \
+    chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
-ARG SHORT_DISTRO_NAME=zookeeper-3.9.2
-ARG DISTRO_NAME=apache-zookeeper-3.9.2-bin
+# layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
+FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.20
+
+ARG SHORT_DISTRO_NAME=zookeeper-3.9.3
+ARG DISTRO_NAME=apache-zookeeper-3.9.3-bin
 
 ENV ZOO_USER=nonroot \
     ZOO_CONF_DIR=/conf \
@@ -94,7 +115,7 @@ ENV ZOO_USER=nonroot \
 COPY --from=zk-builder --chown="$ZOO_USER:$ZOO_USER" /$DISTRO_NAME /$DISTRO_NAME
 COPY --from=zk-builder --chown="$ZOO_USER:$ZOO_USER" $ZOO_CONF_DIR $ZOO_CONF_DIR
 
-WORKDIR $DISTRO_NAME
+WORKDIR apache-zookeeper-3.9.3-bin
 VOLUME ["$ZOO_DATA_DIR", "$ZOO_DATA_LOG_DIR", "$ZOO_LOG_DIR"]
 
 EXPOSE 2181 2888 3888 8080
