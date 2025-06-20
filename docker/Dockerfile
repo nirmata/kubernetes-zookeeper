@@ -88,8 +88,8 @@ RUN set -eux; \
     wget -O jetty-server-9.4.57.v20241219.jar https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-server/9.4.57.v20241219/jetty-server-9.4.57.v20241219.jar; \
     wget -O jetty-http-12.0.12.jar https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-http/12.0.12/jetty-http-12.0.12.jar; \
     wget -O commons-io-2.14.0.jar https://repo1.maven.org/maven2/commons-io/commons-io/2.14.0/commons-io-2.14.0.jar; \
-    # Remove old vulnerable versions \
-    rm -f netty-handler-4.1.105.Final.jar netty-common-4.1.105.Final.jar logback-core-1.2.13.jar jetty-server-9.4.53.v20231009.jar jetty-http-9.4.53.v20231009.jar commons-io-2.11.0.jar; \
+    # Remove old vulnerable versions (updated to match actual versions in 3.9.3) \
+    rm -f netty-handler-4.1.113.Final.jar netty-common-4.1.113.Final.jar logback-core-1.2.13.jar jetty-server-9.4.53.v20231009.jar jetty-http-9.4.56.v20240826.jar commons-io-2.11.0.jar; \
     chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
 # layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
