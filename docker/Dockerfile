@@ -86,12 +86,14 @@ RUN set -eux; \
     wget -O netty-common-4.1.118.Final.jar https://repo1.maven.org/maven2/io/netty/netty-common/4.1.118.Final/netty-common-4.1.118.Final.jar; \
     wget -O jetty-server-9.4.57.v20241219.jar https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-server/9.4.57.v20241219/jetty-server-9.4.57.v20241219.jar; \
     wget -O jetty-http-9.4.57.v20241219.jar https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-http/9.4.57.v20241219/jetty-http-9.4.57.v20241219.jar; \
+    wget -O jetty-io-9.4.57.v20241219.jar https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-io/9.4.57.v20241219/jetty-io-9.4.57.v20241219.jar; \
+    wget -O logback-core-1.5.13.jar https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.5.13/logback-core-1.5.13.jar; \
     # Remove old vulnerable versions (updated to match actual versions in 3.9.3) \
-    rm -f netty-handler-4.1.113.Final.jar netty-common-4.1.113.Final.jar jetty-server-9.4.56.v20240826.jar jetty-http-9.4.56.v20240826.jar; \
+    rm -f netty-handler-4.1.113.Final.jar netty-common-4.1.113.Final.jar jetty-server-9.4.56.v20240826.jar jetty-http-9.4.56.v20240826.jar jetty-io-9.4.56.v20240826.jar logback-core-1.2.13.jar; \
     chown -R "$ZOO_USER:$ZOO_USER" "/$DISTRO_NAME"
 
 # layer2 which uses the base image which has 0 CVEs and copies zk from earlier layer
-FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.20
+FROM ghcr.io/nirmata/wolfi-openjdk-17-jre:0.22
 
 ARG SHORT_DISTRO_NAME=zookeeper-3.9.3
 ARG DISTRO_NAME=apache-zookeeper-3.9.3-bin
